@@ -54,6 +54,8 @@ class CorruptionResult:
     corrupted: OcelLog
     removed_event_object_links: tuple[EventObjectLink, ...]
     training: OcelLog | None = None
+    validation: OcelLog | None = None
+    validation_removed_event_object_links: tuple[EventObjectLink, ...] = ()
 
     @property
     def candidate_object_ids(self) -> frozenset[str]:
@@ -76,5 +78,6 @@ class EvaluationResult:
     mrr: float
     precision: float
     recall: float
-    f1: float
     runtime_seconds: float = 0.0
+    fit_seconds: float = 0.0
+    inference_seconds: float = 0.0

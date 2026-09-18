@@ -40,13 +40,16 @@ class OcelPipeline:
         logger.info("Generating predictions")
         predictions = self.predictor.predict(corruption)
         logger.info("Generated %d predictions", len(predictions))
+        fit_seconds, inference_seconds = self.predictor.timing()
         results = replace(
             self.predictor.evaluate(corruption, predictions),
             runtime_seconds=time.perf_counter() - started,
+            fit_seconds=fit_seconds,
+            inference_seconds=inference_seconds,
         )
         logger.info(
-            "Evaluation complete: model=%s mrr=%.4f f1=%.4f elapsed=%.2fs",
-            results.model, results.mrr, results.f1, time.perf_counter() - started,
+            "Evaluation complete: model=%s mrr=%.4f elapsed=%.2fs",
+            results.model, results.mrr, time.perf_counter() - started,
         )
         self.display.render(results)
         return results
@@ -55,9 +58,6 @@ class OcelPipeline:
         self,
         source_path: str,
         predictors: dict[str, PredictorPort],
-        visualization_path: str | None = None,
-        visualization_samples: int = 5,
-        visualization_top_n: int = 5,
     ):
         started = time.perf_counter()
         logger.info("Starting model comparison: source=%s models=%s", source_path, list(predictors))
@@ -76,23 +76,21 @@ class OcelPipeline:
             predictions = predictor.predict(corruption)
             predictions_by_model[name] = predictions
             result = predictor.evaluate(corruption, predictions)
+            fit_seconds, inference_seconds = predictor.timing()
             result = replace(
                 result,
                 runtime_seconds=time.perf_counter() - model_started,
+                fit_seconds=fit_seconds,
+                inference_seconds=inference_seconds,
             )
             results[name] = result
             logger.info(
-                "Comparison model complete: model=%s runtime=%.2fs mrr=%.4f f1=%.4f",
-                name, result.runtime_seconds, result.mrr, result.f1,
+                "Comparison model complete: model=%s total=%.2fs fit=%.2fs "
+                "inference=%.2fs mrr=%.4f",
+                name, result.runtime_seconds, result.fit_seconds,
+                result.inference_seconds, result.mrr,
             )
         logger.info("Model comparison complete: elapsed=%.2fs", time.perf_counter() - started)
         self.display.render_comparison(results)
-        if visualization_path:
-            self.display.render_samples(
-                corruption,
-                predictions_by_model,
-                visualization_path,
-                visualization_samples,
-                visualization_top_n,
-            )
+        self.display.render_comparison_examples(corruption, predictions_by_model)
         return results

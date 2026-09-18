@@ -63,7 +63,7 @@ class RandomEventObjectGapSimulator(GapSimulatorPort):
 
 
 class SingleTargetGapSimulator(RandomEventObjectGapSimulator):
-    """Notebook-style protocol: one hidden object link per test event."""
+    """Single-target protocol: one hidden object link per test event."""
 
     def __init__(self, test_fraction: float = 0.3, seed: int = 42):
         super().__init__(drop_fraction=0.0, test_fraction=test_fraction, seed=seed)
@@ -102,12 +102,15 @@ class SingleTargetGapSimulator(RandomEventObjectGapSimulator):
         )
 
 
-class NotebookSampleGapSimulator(GapSimulatorPort):
-    """Reproduces the notebook's split and fixed evaluation sample.
+class SampledGapSimulator(GapSimulatorPort):
+    """Splits events into training/validation/test pools and draws fixed-size
+    validation and test samples from the held-out pool.
 
-    The simulator hides one target from each sampled test event. Training
-    positives come only from the 70% training event split, while the graph
-    retains all non-hidden event-object links.
+    For each sampled test/validation event with n participating objects, the
+    simulator hides k = max(1, floor(n * drop_fraction)) of them (at least
+    one, and scaling with event size). Training positives come only from the
+    70% training event split, while the graph retains all non-hidden
+    event-object links.
     """
 
     def __init__(
@@ -117,16 +120,35 @@ class NotebookSampleGapSimulator(GapSimulatorPort):
         split_seed: int = 42,
         sample_seed: int = 0,
         target_seed: int = 42,
+        validation: bool = True,
+        drop_fraction: float = 0.3,
     ):
         if not 0 < test_fraction < 1:
             raise ValueError("test_fraction must be between 0 and 1")
         if sample_size < 1:
             raise ValueError("sample_size must be positive")
+        if not 0 <= drop_fraction < 1:
+            raise ValueError("drop_fraction must be between 0 (inclusive) and 1 (exclusive)")
         self.test_fraction = test_fraction
         self.sample_size = sample_size
         self.split_seed = split_seed
         self.sample_seed = sample_seed
         self.target_seed = target_seed
+        self.validation = validation
+        self.drop_fraction = drop_fraction
+
+    def _select_targets(
+        self,
+        target_rng: random.Random,
+        event_ids: list[str],
+        by_event: dict[str, list[EventObjectLink]],
+    ) -> list[EventObjectLink]:
+        removed: list[EventObjectLink] = []
+        for event_id in event_ids:
+            links = by_event[event_id]
+            k = max(1, int(len(links) * self.drop_fraction))
+            removed.extend(target_rng.sample(links, k))
+        return removed
 
     def introduce_gaps(self, ocel_log: OcelLog) -> CorruptionResult:
         import pandas as pd
@@ -140,19 +162,64 @@ class NotebookSampleGapSimulator(GapSimulatorPort):
         event_frame = pd.DataFrame({"event_id": eligible})
         train_frame = event_frame.sample(frac=1 - self.test_fraction, random_state=self.split_seed)
         test_frame = event_frame.drop(train_frame.index)
+        if not self.validation:
+            sampled_test = test_frame.sample(
+                n=min(self.sample_size, len(test_frame)),
+                random_state=self.sample_seed,
+            )
+            target_rng = random.Random(self.target_seed)
+            removed = self._select_targets(
+                target_rng, sampled_test["event_id"].tolist(), by_event
+            )
+            removed_keys = {
+                (link.event_id, link.object_id, link.qualifier) for link in removed
+            }
+            train_ids = set(train_frame["event_id"].tolist())
+            training = OcelLog(
+                ocel_log.events,
+                ocel_log.objects,
+                tuple(
+                    link
+                    for link in ocel_log.event_object_links
+                    if link.event_id in train_ids
+                ),
+                ocel_log.object_object_links,
+            )
+            logger.info(
+                "Sampled gap protocol: train_events=%d test_events=%d "
+                "test_queries=%d validation=disabled",
+                len(train_frame), len(sampled_test), len(removed),
+            )
+            return CorruptionResult(
+                original=ocel_log,
+                corrupted=ocel_log.without_event_object_links(removed_keys),
+                removed_event_object_links=tuple(removed),
+                training=training,
+            )
         sampled_test = test_frame.sample(
             n=min(self.sample_size, len(test_frame)),
             random_state=self.sample_seed,
         )
-        import random
+        validation_frame = test_frame.drop(sampled_test.index)
+        sampled_validation = validation_frame.sample(
+            n=min(self.sample_size, len(validation_frame)),
+            random_state=self.sample_seed + 1,
+        )
+        final_test_frame = sampled_test
 
         target_rng = random.Random(self.target_seed)
-        removed = [
-            target_rng.choice(by_event[event_id])
-            for event_id in sampled_test["event_id"].tolist()
-        ]
+        removed = self._select_targets(
+            target_rng, sampled_test["event_id"].tolist(), by_event
+        )
+        validation_removed = self._select_targets(
+            target_rng, sampled_validation["event_id"].tolist(), by_event
+        )
         removed_keys = {
             (link.event_id, link.object_id, link.qualifier) for link in removed
+        }
+        validation_keys = {
+            (link.event_id, link.object_id, link.qualifier)
+            for link in validation_removed
         }
         train_ids = set(train_frame["event_id"].tolist())
         training = OcelLog(
@@ -161,14 +228,39 @@ class NotebookSampleGapSimulator(GapSimulatorPort):
             tuple(link for link in ocel_log.event_object_links if link.event_id in train_ids),
             ocel_log.object_object_links,
         )
+        validation_ids = train_ids | set(sampled_validation["event_id"].tolist())
+        test_ids = train_ids | set(final_test_frame["event_id"].tolist())
+        validation = OcelLog(
+            ocel_log.events,
+            ocel_log.objects,
+            tuple(
+                link
+                for link in ocel_log.event_object_links
+                if link.event_id in validation_ids
+            ),
+            ocel_log.object_object_links,
+        ).without_event_object_links(validation_keys)
+        test_context = OcelLog(
+            ocel_log.events,
+            ocel_log.objects,
+            tuple(
+                link
+                for link in ocel_log.event_object_links
+                if link.event_id in test_ids
+            ),
+            ocel_log.object_object_links,
+        ).without_event_object_links(removed_keys)
         logger.info(
-            "Notebook sample protocol: train_events=%d test_events=%d "
-            "sampled_test_events=%d hidden_links=%d",
-            len(train_frame), len(test_frame), len(removed), len(removed),
+            "Sampled gap protocol: train_events=%d validation_events=%d "
+            "test_events=%d validation_queries=%d test_queries=%d",
+            len(train_frame), len(sampled_validation), len(sampled_test),
+            len(validation_removed), len(removed),
         )
         return CorruptionResult(
             original=ocel_log,
-            corrupted=ocel_log.without_event_object_links(removed_keys),
+            corrupted=test_context,
             removed_event_object_links=tuple(removed),
             training=training,
+            validation=validation,
+            validation_removed_event_object_links=tuple(validation_removed),
         )

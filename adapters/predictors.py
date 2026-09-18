@@ -1,5 +1,6 @@
 import math
 import logging
+import time
 from collections import Counter, defaultdict
 from itertools import combinations
 
@@ -10,13 +11,15 @@ from adapters.gnn import GnnConfig, GnnModelAdapter
 logger = logging.getLogger(__name__)
 
 class CoOccurrenceBaseline(PredictorPort):
-    def __init__(self, top_k: int = 10, same_type_candidates: bool = False):
+    def __init__(self, top_k: int = 10):
         if top_k < 1:
             raise ValueError("top_k must be positive")
         self.top_k = top_k
-        self.same_type_candidates = same_type_candidates
+        self._fit_seconds = 0.0
+        self._inference_seconds = 0.0
 
     def predict(self, corruption: CorruptionResult) -> tuple[Prediction, ...]:
+        started = time.perf_counter()
         counts = Counter()
         pairs = Counter()
         training_log = corruption.training or corruption.corrupted
@@ -35,13 +38,14 @@ class CoOccurrenceBaseline(PredictorPort):
             "Co-occurrence model fitted: training_events=%d observed_objects=%d directed_pairs=%d",
             len(self._event_objects(training_log)), len(counts), len(conditional),
         )
+        self._fit_seconds = time.perf_counter() - started
+        inference_started = time.perf_counter()
 
         predictions: list[Prediction] = []
         test_events = {
             link.event_id for link in corruption.removed_event_object_links
         }
         candidate_ids = corruption.candidate_object_ids
-        object_types = {obj.id: obj.type for obj in corruption.original.objects}
         logger.info(
             "Co-occurrence candidate universe aligned: %d event-participating objects",
             len(candidate_ids),
@@ -50,18 +54,6 @@ class CoOccurrenceBaseline(PredictorPort):
             if event_id not in test_events:
                 continue
             candidates = candidate_ids - observed
-            if self.same_type_candidates:
-                target_link = next(
-                    link
-                    for link in corruption.removed_event_object_links
-                    if link.event_id == event_id
-                )
-                target_type = object_types[target_link.object_id]
-                candidates = {
-                    candidate
-                    for candidate in candidates
-                    if object_types[candidate] == target_type
-                }
             scored = []
             for candidate in candidates:
                 score = sum(
@@ -73,7 +65,11 @@ class CoOccurrenceBaseline(PredictorPort):
                 sorted(scored, key=lambda item: (-item[1], item[0]))[: self.top_k], 1
             ):
                 predictions.append(Prediction(event_id, candidate, score, rank))
+        self._inference_seconds = time.perf_counter() - inference_started
         return tuple(predictions)
+
+    def timing(self) -> tuple[float, float]:
+        return self._fit_seconds, self._inference_seconds
 
     def evaluate(
         self, corruption: CorruptionResult, predictions: tuple[Prediction, ...]
@@ -99,7 +95,6 @@ class CoOccurrenceBaseline(PredictorPort):
         predicted = len(predictions)
         recall = correct / len(truth) if truth else 0.0
         precision = correct / predicted if predicted else 0.0
-        f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
         return EvaluationResult(
             "co-occurrence",
             len(truth),
@@ -107,7 +102,6 @@ class CoOccurrenceBaseline(PredictorPort):
             sum(1 / rank for rank in ranks) / len(truth) if truth else 0.0,
             precision,
             recall,
-            f1,
         )
 
     @staticmethod
@@ -120,9 +114,20 @@ class CoOccurrenceBaseline(PredictorPort):
 class GnnPredictor(PredictorPort):
     def __init__(self, config: GnnConfig | None = None):
         self.model = GnnModelAdapter(config or GnnConfig())
+        self._fit_seconds = 0.0
+        self._inference_seconds = 0.0
+
+    def train(self, corruption: CorruptionResult) -> None:
+        self.model.fit(corruption)
 
     def predict(self, corruption: CorruptionResult) -> tuple[Prediction, ...]:
-        return self.model.predict(corruption)
+        predictions = self.model.predict(corruption)
+        self._fit_seconds = self.model.fit_seconds
+        self._inference_seconds = self.model.inference_seconds
+        return predictions
+
+    def timing(self) -> tuple[float, float]:
+        return self._fit_seconds, self._inference_seconds
 
     def evaluate(
         self, corruption: CorruptionResult, predictions: tuple[Prediction, ...]

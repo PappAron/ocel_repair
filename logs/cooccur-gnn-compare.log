@@ -1,0 +1,136 @@
+12:50:27 | INFO     | core.pipeline | Starting model comparison: source=data/ocel2-p2p.sqlite models=['co-occurrence', 'gnn']
+12:50:27 | INFO     | adapters.loaders | Opening SQLite OCEL database: data/ocel2-p2p.sqlite
+12:50:30 | INFO     | adapters.loaders | SQLite normalization complete: event_types=10 object_types=7
+12:50:30 | INFO     | core.pipeline | Loaded events=14671 objects=9543 event_object_links=35097 object_object_links=20014
+12:50:30 | INFO     | core.gap_simulator | Notebook sample protocol: train_events=10270 validation_events=200 test_events=200 validation_queries=208 test_queries=209
+12:50:30 | INFO     | core.pipeline | Comparison model started: co-occurrence
+12:50:30 | INFO     | adapters.predictors | Co-occurrence model fitted: training_events=10270 observed_objects=8435 directed_pairs=8435
+12:50:30 | INFO     | adapters.predictors | Co-occurrence candidate universe aligned: 9011 event-participating objects
+12:50:36 | INFO     | core.pipeline | Comparison model complete: model=co-occurrence total=6.29s fit=0.18s inference=5.90s mrr=0.4250
+12:50:36 | INFO     | core.pipeline | Comparison model started: gnn
+12:50:37 | INFO     | adapters.gnn | GNN setup: device=cuda events=14671 objects=9011 observed_pairs=24500 held_out_pairs=209 negatives_per_positive=20 epochs=2000 hidden_dim=128
+12:50:39 | INFO     | adapters.gnn | GNN validation check after epoch 1/2000 mrr=0.0081
+12:50:39 | INFO     | adapters.gnn | GNN epoch 1/2000 loss=3.08290 positive=0.2759 negative=0.2662
+12:51:12 | INFO     | adapters.gnn | GNN validation check after epoch 50/2000 mrr=0.2120
+12:51:46 | INFO     | adapters.gnn | GNN validation check after epoch 100/2000 mrr=0.3047
+12:52:22 | INFO     | adapters.gnn | GNN validation check after epoch 150/2000 mrr=0.3698
+12:52:57 | INFO     | adapters.gnn | GNN validation check after epoch 200/2000 mrr=0.3935
+12:52:57 | INFO     | adapters.gnn | GNN epoch 200/2000 loss=0.54724 positive=0.7427 negative=0.0917
+12:53:31 | INFO     | adapters.gnn | GNN validation check after epoch 250/2000 mrr=0.4265
+12:54:03 | INFO     | adapters.gnn | GNN validation check after epoch 300/2000 mrr=0.4287
+12:54:37 | INFO     | adapters.gnn | GNN validation check after epoch 350/2000 mrr=0.4724
+12:55:09 | INFO     | adapters.gnn | GNN validation check after epoch 400/2000 mrr=0.4784
+12:55:09 | INFO     | adapters.gnn | GNN epoch 400/2000 loss=0.36153 positive=0.7654 negative=0.0678
+12:55:46 | INFO     | adapters.gnn | GNN validation check after epoch 450/2000 mrr=0.4829
+12:56:25 | INFO     | adapters.gnn | GNN validation check after epoch 500/2000 mrr=0.5081
+12:57:04 | INFO     | adapters.gnn | GNN validation check after epoch 550/2000 mrr=0.5301
+12:57:41 | INFO     | adapters.gnn | GNN validation check after epoch 600/2000 mrr=0.5243
+12:57:41 | INFO     | adapters.gnn | GNN epoch 600/2000 loss=0.30113 positive=0.7865 negative=0.0595
+12:58:15 | INFO     | adapters.gnn | GNN validation check after epoch 650/2000 mrr=0.5467
+12:58:51 | INFO     | adapters.gnn | GNN validation check after epoch 700/2000 mrr=0.5538
+12:59:29 | INFO     | adapters.gnn | GNN validation check after epoch 750/2000 mrr=0.5419
+13:00:11 | INFO     | adapters.gnn | GNN validation check after epoch 800/2000 mrr=0.5635
+13:00:11 | INFO     | adapters.gnn | GNN epoch 800/2000 loss=0.24716 positive=0.7998 negative=0.0550
+13:00:48 | INFO     | adapters.gnn | GNN validation check after epoch 850/2000 mrr=0.5742
+13:01:25 | INFO     | adapters.gnn | GNN validation check after epoch 900/2000 mrr=0.5714
+13:02:02 | INFO     | adapters.gnn | GNN validation check after epoch 950/2000 mrr=0.5888
+13:02:42 | INFO     | adapters.gnn | GNN validation check after epoch 1000/2000 mrr=0.5788
+13:02:42 | INFO     | adapters.gnn | GNN epoch 1000/2000 loss=0.23073 positive=0.8025 negative=0.0486
+13:03:19 | INFO     | adapters.gnn | GNN validation check after epoch 1050/2000 mrr=0.5789
+13:03:55 | INFO     | adapters.gnn | GNN validation check after epoch 1100/2000 mrr=0.5775
+13:04:30 | INFO     | adapters.gnn | GNN validation check after epoch 1150/2000 mrr=0.6016
+13:05:07 | INFO     | adapters.gnn | GNN validation check after epoch 1200/2000 mrr=0.5860
+13:05:07 | INFO     | adapters.gnn | GNN epoch 1200/2000 loss=0.21469 positive=0.8132 negative=0.0481
+13:05:43 | INFO     | adapters.gnn | GNN validation check after epoch 1250/2000 mrr=0.6029
+13:06:19 | INFO     | adapters.gnn | GNN validation check after epoch 1300/2000 mrr=0.5957
+13:06:52 | INFO     | adapters.gnn | GNN validation check after epoch 1350/2000 mrr=0.6063
+13:07:24 | INFO     | adapters.gnn | GNN validation check after epoch 1400/2000 mrr=0.5991
+13:07:24 | INFO     | adapters.gnn | GNN epoch 1400/2000 loss=0.18794 positive=0.8139 negative=0.0434
+13:07:56 | INFO     | adapters.gnn | GNN validation check after epoch 1450/2000 mrr=0.6056
+13:08:27 | INFO     | adapters.gnn | GNN validation check after epoch 1500/2000 mrr=0.6085
+13:08:58 | INFO     | adapters.gnn | GNN validation check after epoch 1550/2000 mrr=0.5939
+13:09:30 | INFO     | adapters.gnn | GNN validation check after epoch 1600/2000 mrr=0.6111
+13:09:30 | INFO     | adapters.gnn | GNN epoch 1600/2000 loss=0.19961 positive=0.8107 negative=0.0442
+13:10:02 | INFO     | adapters.gnn | GNN validation check after epoch 1650/2000 mrr=0.6116
+13:10:36 | INFO     | adapters.gnn | GNN validation check after epoch 1700/2000 mrr=0.6140
+13:11:09 | INFO     | adapters.gnn | GNN validation check after epoch 1750/2000 mrr=0.6161
+13:11:41 | INFO     | adapters.gnn | GNN validation check after epoch 1800/2000 mrr=0.6231
+13:11:41 | INFO     | adapters.gnn | GNN epoch 1800/2000 loss=0.16918 positive=0.8181 negative=0.0449
+13:12:13 | INFO     | adapters.gnn | GNN validation check after epoch 1850/2000 mrr=0.6187
+13:12:45 | INFO     | adapters.gnn | GNN validation check after epoch 1900/2000 mrr=0.6114
+13:13:17 | INFO     | adapters.gnn | GNN validation check after epoch 1950/2000 mrr=0.6084
+13:13:52 | INFO     | adapters.gnn | GNN validation check after epoch 2000/2000 mrr=0.6102
+13:13:52 | INFO     | adapters.gnn | GNN epoch 2000/2000 loss=0.17738 positive=0.8130 negative=0.0426
+13:13:52 | INFO     | adapters.gnn | Saved best GNN checkpoint: path=models\gnn_best_20260918_131352.pt epoch=1800 loss=0.16918 validation_mrr=0.6231
+13:13:52 | INFO     | adapters.gnn | GNN candidate policy: filter=all universe=9011
+13:13:52 | INFO     | adapters.gnn | Scoring 200 held-out events with top_k=10000
+13:14:45 | INFO     | core.pipeline | Comparison model complete: model=gnn total=1449.31s fit=1395.59s inference=53.53s mrr=0.6194
+13:14:45 | INFO     | core.pipeline | Model comparison complete: elapsed=1458.63s
+
+--- MODEL COMPARISON ---
+Model | Fit (s) | Inference (s) | Total (s) | Hits@1 | Hits@3 | Hits@5 | Hits@10 | MRR
+------------------------------------------------------------------------------------------------
+co-occurrence | 0.18 | 5.90 | 6.29 | 0.3014 | 0.5167 | 0.6077 | 0.7177 | 0.4250
+gnn | 1395.59 | 53.53 | 1449.31 | 0.4689 | 0.7225 | 0.8182 | 0.8947 | 0.6194
+
+--- EVALUATION EXAMPLES ---
+
+Event event:10290
+  Observed: goods receipt:687
+  Missing:  purchase_order:571
+  co-occurrence: invoice receipt:679 (r1), purchase_order:572 (r2), purchase_order:573 (r3), goods receipt:686 (r4), goods receipt:688 (r5)
+  gnn: purchase_order:571 (r1), purchase_order:734 (r2), purchase_order:782 (r3), purchase_order:915 (r4), purchase_order:1191 (r5)
+
+Event event:10295
+  Observed: goods receipt:681
+  Missing:  purchase_order:542
+  co-occurrence: invoice receipt:669 (r1), payment:326 (r2), purchase_order:542 (r3), goods receipt:0 (r4), goods receipt:1 (r5)
+  gnn: invoice receipt:478 (r1), invoice receipt:712 (r2), invoice receipt:1366 (r3), purchase_order:542 (r4), invoice receipt:697 (r5)
+
+Event event:10465
+  Observed: purchase_order:565
+  Missing:  quotation:336
+  co-occurrence: goods receipt:696 (r1), goods receipt:697 (r2), goods receipt:698 (r3), invoice receipt:690 (r4), payment:335 (r5)
+  gnn: quotation:336 (r1), quotation:457 (r2), quotation:708 (r3), quotation:151 (r4), quotation:437 (r5)
+
+Event event:10561
+  Observed: goods receipt:692
+  Missing:  invoice receipt:697
+  co-occurrence: purchase_order:561 (r1), invoice receipt:697 (r2), payment:332 (r3), goods receipt:0 (r4), goods receipt:1 (r5)
+  gnn: invoice receipt:697 (r1), invoice receipt:1366 (r2), invoice receipt:712 (r3), invoice receipt:478 (r4), invoice receipt:1575 (r5)
+
+Event event:10770
+  Observed: invoice receipt:706
+  Missing:  goods receipt:709
+  co-occurrence: goods receipt:707 (r1), goods receipt:710 (r2), goods receipt:708 (r3), goods receipt:709 (r4), payment:341 (r5)
+  gnn: goods receipt:710 (r1), goods receipt:282 (r2), goods receipt:149 (r3), goods receipt:709 (r4), goods receipt:707 (r5)
+
+Event event:10849
+  Observed: quotation:350
+  Missing:  purchase_order:595
+  co-occurrence: purchase_order:596 (r1), purchase_requisition:352:pr_trigger_352 (r2), goods receipt:0 (r3), goods receipt:1 (r4), goods receipt:10 (r5)
+  gnn: purchase_order:743 (r1), purchase_order:595 (r2), purchase_order:1499 (r3), purchase_order:1052 (r4), purchase_order:1277 (r5)
+
+Event event:10981
+  Observed: goods receipt:699
+  Missing:  invoice receipt:712
+  co-occurrence: purchase_order:575 (r1), invoice receipt:712 (r2), payment:342 (r3), goods receipt:0 (r4), goods receipt:1 (r5)
+  gnn: invoice receipt:712 (r1), invoice receipt:478 (r2), invoice receipt:697 (r3), invoice receipt:1366 (r4), invoice receipt:1575 (r5)
+
+Event event:11042
+  Observed: material:903
+  Missing:  purchase_requisition:366:pr_trigger_366
+  co-occurrence: material:904 (r1), material:905 (r2), purchase_requisition:366:pr_trigger_366 (r3), goods receipt:0 (r4), goods receipt:1 (r5)
+  gnn: purchase_requisition:622:pr_trigger_622 (r1), purchase_requisition:366:pr_trigger_366 (r2), purchase_requisition:571:pr_trigger_571 (r3), purchase_requisition:475:pr_trigger_475 (r4), purchase_requisition:231:pr_trigger_231 (r5)
+
+Event event:11084
+  Observed: goods receipt:716
+  Missing:  invoice receipt:725
+  co-occurrence: invoice receipt:725 (r1), purchase_order:591 (r2), purchase_order:592 (r3), goods receipt:717 (r4), goods receipt:718 (r5)
+  gnn: invoice receipt:725 (r1), purchase_order:220 (r2), purchase_order:615 (r3), purchase_order:1185 (r4), purchase_order:921 (r5)
+
+Event event:11136
+  Observed: quotation:360
+  Missing:  purchase_order:615
+  co-occurrence: purchase_order:613 (r1), purchase_order:614 (r2), purchase_order:615 (r3), purchase_requisition:362:pr_trigger_362 (r4), goods receipt:0 (r5)
+  gnn: purchase_order:615 (r1), purchase_order:635 (r2), purchase_order:1185 (r3), purchase_order:921 (r4), purchase_order:220 (r5)

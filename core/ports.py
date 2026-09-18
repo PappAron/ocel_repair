@@ -27,6 +27,10 @@ class PredictorPort(ABC):
     ) -> EvaluationResult:
         pass
 
+    @abstractmethod
+    def timing(self) -> tuple[float, float]:
+        pass
+
 class ResultDisplayPort(ABC):
     @abstractmethod
     def render(self, results: object) -> None:
@@ -37,12 +41,10 @@ class ResultDisplayPort(ABC):
         pass
 
     @abstractmethod
-    def render_samples(
+    def render_comparison_examples(
         self,
         corruption: CorruptionResult,
         predictions: dict[str, tuple[Prediction, ...]],
-        output_path: str,
-        sample_count: int,
-        top_n: int,
+        limit: int = 10,
     ) -> None:
         pass
