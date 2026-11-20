@@ -6,6 +6,7 @@ from itertools import combinations
 
 from core.domain import CorruptionResult, EvaluationResult, Prediction
 from core.ports import PredictorPort
+from core.metrics import evaluate_rankings
 from adapters.gnn import GnnConfig, GnnModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ class CoOccurrenceBaseline(PredictorPort):
         started = time.perf_counter()
         counts = Counter()
         pairs = Counter()
-        training_log = corruption.training or corruption.corrupted
+        training_log = corruption.statistics_training or corruption.corrupted
         for event_id in self._event_objects(training_log).values():
             objects = sorted(event_id)
             for object_id in objects:
@@ -74,35 +75,7 @@ class CoOccurrenceBaseline(PredictorPort):
     def evaluate(
         self, corruption: CorruptionResult, predictions: tuple[Prediction, ...]
     ) -> EvaluationResult:
-        truth = {
-            (link.event_id, link.object_id)
-            for link in corruption.removed_event_object_links
-        }
-        by_event: dict[str, list[Prediction]] = defaultdict(list)
-        for prediction in predictions:
-            by_event[prediction.event_id].append(prediction)
-        ranks = [
-            prediction.rank
-            for event_id, object_id in truth
-            for prediction in by_event[event_id]
-            if prediction.object_id == object_id
-        ]
-        hits = {
-            k: sum(rank <= k for rank in ranks) / len(truth) if truth else 0.0
-            for k in (1, 3, 5, 10)
-        }
-        correct = len(ranks)
-        predicted = len(predictions)
-        recall = correct / len(truth) if truth else 0.0
-        precision = correct / predicted if predicted else 0.0
-        return EvaluationResult(
-            "co-occurrence",
-            len(truth),
-            hits,
-            sum(1 / rank for rank in ranks) / len(truth) if truth else 0.0,
-            precision,
-            recall,
-        )
+        return evaluate_rankings("co-occurrence", corruption, predictions)
 
     @staticmethod
     def _event_objects(log):

@@ -1,0 +1,9 @@
+# versions used for the paper (PyTorch built for CUDA 12.6)
+torch==2.14.1
+torch_geometric==2.8.1
+numpy==2.5.4
+pandas==3.1.0
+# optional: gradient-boosting baseline (experiments/gb_features*.py) and the re-run of the published detector
+lightgbm
+scipy
+scikit-learn

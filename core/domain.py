@@ -56,10 +56,29 @@ class CorruptionResult:
     training: OcelLog | None = None
     validation: OcelLog | None = None
     validation_removed_event_object_links: tuple[EventObjectLink, ...] = ()
+    # Events whose links were added to the graphs as context only (one-object events, see
+    # --one-object-context). They are never damaged, queried or counted in statistics.
+    context_event_ids: frozenset = frozenset()
+
+    @property
+    def statistics_training(self):
+        """The training log without context-only events: source of training queries and
+        co-occurrence statistics (identical to `training` unless context events were added)."""
+        if self.training is None or not self.context_event_ids:
+            return self.training
+        context = self.context_event_ids
+        return OcelLog(
+            self.training.events,
+            self.training.objects,
+            tuple(l for l in self.training.event_object_links if l.event_id not in context),
+            self.training.object_object_links,
+        )
 
     @property
     def candidate_object_ids(self) -> frozenset[str]:
-        return frozenset(link.object_id for link in self.original.event_object_links)
+        # All objects of the log's object table. (Previously: objects with an
+        # event-object link in the ORIGINAL log, which used the ground truth.)
+        return frozenset(obj.id for obj in self.original.objects)
 
 
 @dataclass(frozen=True)
@@ -76,8 +95,8 @@ class EvaluationResult:
     evaluated_links: int
     hits_at_k: Mapping[int, float]
     mrr: float
-    precision: float
-    recall: float
     runtime_seconds: float = 0.0
     fit_seconds: float = 0.0
     inference_seconds: float = 0.0
+    decision: Mapping | None = None
+    per_query: tuple | None = None  # (event_id, object_id, reciprocal rank, hits@1, hits@3, hits@10)

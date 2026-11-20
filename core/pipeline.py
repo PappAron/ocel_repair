@@ -2,6 +2,8 @@ import logging
 import time
 from dataclasses import replace
 
+from core.decision import decision_report, format_report
+from core.metrics import per_query_metrics
 from core.ports import DataLoaderPort, GapSimulatorPort, PredictorPort, ResultDisplayPort
 
 logger = logging.getLogger(__name__)
@@ -83,6 +85,24 @@ class OcelPipeline:
                 fit_seconds=fit_seconds,
                 inference_seconds=inference_seconds,
             )
+            if corruption.validation is not None and corruption.validation_removed_event_object_links:
+                # Score the validation events with the same fitted model, to choose the
+                # threshold of the automatic-insertion rule (D11/E8) before looking at test.
+                validation_view = replace(
+                    corruption,
+                    corrupted=corruption.validation,
+                    removed_event_object_links=corruption.validation_removed_event_object_links,
+                )
+                validation_predictions = predictor.predict(validation_view)
+                report = decision_report(
+                    corruption.validation_removed_event_object_links,
+                    validation_predictions,
+                    corruption.removed_event_object_links,
+                    predictions,
+                )
+                result = replace(result, decision=report)
+                logger.info("%s", format_report(name, report))
+            result = replace(result, per_query=per_query_metrics(corruption, predictions))
             results[name] = result
             logger.info(
                 "Comparison model complete: model=%s total=%.2fs fit=%.2fs "
